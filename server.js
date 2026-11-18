@@ -229,10 +229,27 @@ app.post('/api/incidencias/:id/seguimiento', async (req, res) => {
     }
 });
 
-// Verificar conexión a BD al iniciar
+// Verificar conexión a BD e inicializar automáticamente esquema si es necesario
 pool.query('SELECT NOW()')
-    .then(() => {
-        console.log('Conexión exitosa a PostgreSQL.');
+    .then(async () => {
+        console.log('Conexión exitosa a PostgreSQL con SSL.');
+
+        try {
+            const tableCheck = await pool.query("SELECT 1 FROM information_schema.tables WHERE table_name = 'usuarios'");
+            if (tableCheck.rows.length === 0) {
+                console.log('Inicializando tablas de HelpDesk desde Tabla_Registros.sql...');
+                const sqlPath = path.join(__dirname, 'Tabla_Registros.sql');
+                if (fs.existsSync(sqlPath)) {
+                    const sqlInit = fs.readFileSync(sqlPath, 'utf-8');
+                    await pool.query(sqlInit);
+                    console.log('Tablas y datos iniciales creados correctamente en la base de datos.');
+                }
+            } else {
+                console.log('Las tablas de HelpDesk ya están presentes en la base de datos.');
+            }
+        } catch (dbInitErr) {
+            console.warn('Aviso al verificar tablas:', dbInitErr.message);
+        }
 
         // Verificar o crear bucket en S3 si está configurado
         if (s3Client && process.env.S3_BUCKET_NAME) {
