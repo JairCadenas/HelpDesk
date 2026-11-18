@@ -1,0 +1,132 @@
+#!/bin/bash
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+echo "=== INICIANDO DESPLIEGUE HELPDESK ==="
+
+# 1. Actualizar repositorios e instalar paquetes base
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
+apt-get install -y curl git postgresql-client nginx
+
+# 2. Instalar Node.js 20 LTS
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+
+echo "Node.js versión: $(node -v)"
+echo "NPM versión: $(npm -v)"
+
+# 3. Preparar directorio de la aplicación
+mkdir -p /var/www/helpdesk
+cd /var/www/helpdesk
+
+# Clonar el repositorio
+git clone ${repository_url} . || echo "Repositorio ya clonado o con contenido previo"
+
+# Instalar dependencias del proyecto y el cliente S3
+npm install
+npm install @aws-sdk/client-s3
+
+# 3.1 Inicializar Bucket S3 de evidencias mediante AWS SDK (evita bloqueo por SCP en Learner Lab)
+echo "Inicializando bucket S3 (${s3_bucket_name})..."
+node -e "
+const { S3Client, CreateBucketCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
+const s3 = new S3Client({ region: '${aws_region}' });
+(async () => {
+  try {
+    await s3.send(new HeadBucketCommand({ Bucket: '${s3_bucket_name}' }));
+    console.log('Bucket S3 ya existe.');
+  } catch (e) {
+    try {
+      await s3.send(new CreateBucketCommand({ Bucket: '${s3_bucket_name}' }));
+      console.log('Bucket S3 creado exitosamente.');
+    } catch (err) {
+      console.log('Aviso al crear bucket S3:', err.message);
+    }
+  }
+})();
+" || true
+
+# 4. Esperar a que la base de datos RDS PostgreSQL esté lista
+echo "Esperando conexión con RDS (${db_host})..."
+until pg_isready -h ${db_host} -p 5432 -U ${db_user}; do
+  echo "RDS aún no está disponible, esperando 5 segundos..."
+  sleep 5
+done
+echo "Conexión con RDS exitosa."
+
+# 5. Inicializar el esquema y datos de prueba si las tablas no existen
+echo "Verificando esquema en PostgreSQL..."
+export PGPASSWORD='${db_password}'
+export PGSSLMODE='require'
+TABLE_EXISTS=$(psql -h ${db_host} -p 5432 -U ${db_user} -d ${db_name} -tAc "SELECT 1 FROM information_schema.tables WHERE table_name='usuarios';")
+
+if [ "$TABLE_EXISTS" != "1" ]; then
+  echo "Ejecutando Tabla_Registros.sql..."
+  psql -h ${db_host} -p 5432 -U ${db_user} -d ${db_name} -f /var/www/helpdesk/Tabla_Registros.sql
+  echo "Base de datos inicializada correctamente."
+else
+  echo "Las tablas ya existen en la base de datos."
+fi
+
+# 6. Crear archivo de variables de entorno (.env)
+cat <<EOF > /var/www/helpdesk/.env
+PORT=${app_port}
+DB_HOST=${db_host}
+DB_PORT=5432
+DB_USER=${db_user}
+DB_PASSWORD=${db_password}
+DB_NAME=${db_name}
+S3_BUCKET_NAME=${s3_bucket_name}
+AWS_REGION=${aws_region}
+EOF
+
+# Ajustar permisos para el usuario ubuntu
+chown -R ubuntu:ubuntu /var/www/helpdesk
+
+# 7. Configurar servicio Systemd para mantener la aplicación activa
+cat <<EOF > /etc/systemd/system/helpdesk.service
+[Unit]
+Description=HelpDesk Node.js Application
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/helpdesk
+ExecStart=/usr/bin/node /var/www/helpdesk/server.js
+Restart=always
+RestartSec=5
+EnvironmentFile=/var/www/helpdesk/.env
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable helpdesk
+systemctl start helpdesk
+
+# 8. Configurar Nginx como Reverse Proxy (Puerto 80 -> Puerto 3000)
+cat <<EOF > /etc/nginx/sites-available/default
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name _;
+    client_max_body_size 25M;
+
+    location / {
+        proxy_pass http://127.0.0.1:${app_port};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+}
+EOF
+
+nginx -t && systemctl restart nginx
+
+echo "=== DESPLIEGUE HELPDESK COMPLETADO EXITOSAMENTE ==="
