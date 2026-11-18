@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Soporte | Help Desk Escolar</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="brand">🛠️ Mesa de Ayuda — Soporte Técnico</a>
+        <div class="nav-user">
+            <span id="user-info"></span>
+            <button onclick="cerrarSesion()" class="btn btn-secondary btn-sm">Cerrar Sesión</button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Resumen rápido -->
+        <div class="stats-grid">
+            <div class="stat-box"><span id="count-abierto">0</span>Abiertos</div>
+            <div class="stat-box"><span id="count-atencion">0</span>En atención</div>
+            <div class="stat-box"><span id="count-resuelto">0</span>Resueltos</div>
+        </div>
+
+        <!-- Filtros y bandeja general -->
+        <section class="card">
+            <h2 style="margin-bottom: 12px;">Bandeja General de Incidencias</h2>
+            <div class="form-grid" style="margin-bottom: 18px;">
+                <div>
+                    <label for="filtro-estado">Filtrar por Estado</label>
+                    <select id="filtro-estado" onchange="cargarBandeja()">
+                        <option value="">Todos</option>
+                        <option value="Abierto">Abierto</option>
+                        <option value="En atención">En atención</option>
+                        <option value="Resuelto">Resuelto</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filtro-categoria">Filtrar por Categoría</label>
+                    <select id="filtro-categoria" onchange="cargarBandeja()">
+                        <option value="">Todas</option>
+                        <option value="Proyectores">Proyectores</option>
+                        <option value="Cables">Cables</option>
+                        <option value="Cámaras">Cámaras</option>
+                        <option value="Mobiliario">Mobiliario</option>
+                        <option value="Eléctrico">Eléctrico</option>
+                        <option value="Red e Internet">Red e Internet</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filtro-prioridad">Filtrar por Prioridad</label>
+                    <select id="filtro-prioridad" onchange="cargarBandeja()">
+                        <option value="">Todas</option>
+                        <option value="Baja">Baja</option>
+                        <option value="Media">Media</option>
+                        <option value="Alta">Alta</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="bandeja-tickets"></div>
+        </section>
+    </main>
+
+    <script src="auth.js"></script>
+    <script src="soporte.js"></script>
+</body>
+</html>

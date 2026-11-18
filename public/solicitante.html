@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Solicitante | Help Desk Escolar</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="brand">🛠️ Mesa de Ayuda Escolar</a>
+        <div class="nav-user">
+            <span id="user-info"></span>
+            <button onclick="cerrarSesion()" class="btn btn-secondary btn-sm">Cerrar Sesión</button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Formulario de nuevo reporte -->
+        <section class="card">
+            <h2 style="margin-bottom: 14px;">Levantar Nuevo Reporte de Falla</h2>
+            <form id="ticket-form">
+                <div class="form-grid">
+                    <div>
+                        <label for="asunto">Asunto breve</label>
+                        <input type="text" id="asunto" placeholder="Ej. Proyector sin señal en Aula 4" required>
+                    </div>
+                    <div>
+                        <label for="categoria">Categoría del equipo</label>
+                        <select id="categoria" required>
+                            <option value="Proyectores">Proyectores</option>
+                            <option value="Cables">Cables y Conectores</option>
+                            <option value="Cámaras">Cámaras de Seguridad</option>
+                            <option value="Mobiliario">Mobiliario (Mesas/Sillas)</option>
+                            <option value="Eléctrico">Instalación Eléctrica</option>
+                            <option value="Red e Internet">Red e Internet</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="prioridad">Nivel de Prioridad</label>
+                        <select id="prioridad" required>
+                            <option value="Baja">Baja</option>
+                            <option value="Media" selected>Media</option>
+                            <option value="Alta">Alta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label for="descripcion">Descripción detallada y ubicación</label>
+                    <textarea id="descripcion" rows="3" placeholder="Indica el edificio, número de aula y qué ocurre exactamente..." required></textarea>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label for="evidencia">Adjuntar evidencia (imagen o documento opcional)</label>
+                    <input type="file" id="evidencia" accept="image/*,.pdf,.doc,.docx">
+                </div>
+
+                <button type="submit" class="btn">Generar Folio de Incidencia</button>
+            </form>
+        </section>
+
+        <!-- Listado de folios propios -->
+        <section class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <h2>Mis Folios Reportados</h2>
+                <select id="filtro-estado" onchange="cargarMisFolios()" style="width: auto;">
+                    <option value="">Todos los estados</option>
+                    <option value="Abierto">Abierto</option>
+                    <option value="En atención">En atención</option>
+                    <option value="Resuelto">Resuelto</option>
+                </select>
+            </div>
+            <div id="mis-tickets"></div>
+        </section>
+    </main>
+
+    <script src="auth.js"></script>
+    <script src="solicitante.js"></script>
+</body>
+</html>
