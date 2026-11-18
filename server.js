@@ -3,11 +3,53 @@ const express = require('express');
 const { Pool } = require('pg');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+
+let S3Client, PutObjectCommand, GetObjectCommand;
+try {
+    ({ S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3'));
+} catch (e) {
+    // Si no está instalado en entorno local, continúa con almacenamiento en disco
+}
+
+const s3Client = (S3Client && process.env.S3_BUCKET_NAME)
+    ? new S3Client({ region: process.env.AWS_REGION || 'us-east-1' })
+    : null;
 
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
-app.use('/uploads', express.static('uploads'));
+
+// Asegurar carpeta uploads local como respaldo si no hay S3
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads', { recursive: true });
+}
+
+// Servir evidencias (S3 o almacenamiento local)
+app.get('/uploads/:filename', async (req, res) => {
+    const filename = path.basename(req.params.filename);
+    if (s3Client && process.env.S3_BUCKET_NAME) {
+        try {
+            const command = new GetObjectCommand({
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: filename
+            });
+            const s3Response = await s3Client.send(command);
+            if (s3Response.ContentType) {
+                res.setHeader('Content-Type', s3Response.ContentType);
+            }
+            s3Response.Body.pipe(res);
+        } catch (err) {
+            console.error('Error al recuperar evidencia de S3:', err.message);
+            res.status(404).send('Archivo no encontrado');
+        }
+    } else {
+        const localPath = path.join(__dirname, 'uploads', filename);
+        res.sendFile(localPath, (err) => {
+            if (err) res.status(404).send('Archivo no encontrado');
+        });
+    }
+});
 
 const pool = new Pool({
     host: process.env.DB_HOST,
@@ -17,14 +59,16 @@ const pool = new Pool({
     database: process.env.DB_NAME
 });
 
-// Configuración local de evidencias (reemplazable después por Amazon S3)
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E5);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Configuración de almacenamiento de evidencias (S3 o disco local)
+const storage = (s3Client && process.env.S3_BUCKET_NAME)
+    ? multer.memoryStorage()
+    : multer.diskStorage({
+        destination: (req, file, cb) => cb(null, 'uploads/'),
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E5);
+            cb(null, uniqueSuffix + path.extname(file.originalname));
+        }
+    });
 const upload = multer({ storage });
 
 // 1. Inicio de sesión por perfil
@@ -122,9 +166,24 @@ app.post('/api/incidencias', upload.single('evidencia'), async (req, res) => {
         );
 
         if (req.file) {
+            let rutaArchivo = '';
+            if (s3Client && process.env.S3_BUCKET_NAME) {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E5);
+                const s3Key = uniqueSuffix + path.extname(req.file.originalname);
+                await s3Client.send(new PutObjectCommand({
+                    Bucket: process.env.S3_BUCKET_NAME,
+                    Key: s3Key,
+                    Body: req.file.buffer,
+                    ContentType: req.file.mimetype
+                }));
+                rutaArchivo = `/uploads/${s3Key}`;
+            } else {
+                rutaArchivo = `/uploads/${req.file.filename}`;
+            }
+
             await client.query(
                 'INSERT INTO evidencias (incidencia_id, nombre_archivo, ruta_archivo) VALUES ($1, $2, $3)',
-                [incidenciaId, req.file.originalname, `/uploads/${req.file.filename}`]
+                [incidenciaId, req.file.originalname, rutaArchivo]
             );
         }
 
@@ -171,6 +230,22 @@ app.post('/api/incidencias/:id/seguimiento', async (req, res) => {
 pool.query('SELECT NOW()')
     .then(() => {
         console.log('Conexión exitosa a PostgreSQL.');
+
+        // Verificar o crear bucket en S3 si está configurado
+        if (s3Client && process.env.S3_BUCKET_NAME) {
+            const { CreateBucketCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
+            s3Client.send(new HeadBucketCommand({ Bucket: process.env.S3_BUCKET_NAME }))
+                .then(() => console.log(`Bucket S3 '${process.env.S3_BUCKET_NAME}' verificado y disponible.`))
+                .catch(async () => {
+                    try {
+                        await s3Client.send(new CreateBucketCommand({ Bucket: process.env.S3_BUCKET_NAME }));
+                        console.log(`Bucket S3 '${process.env.S3_BUCKET_NAME}' creado exitosamente.`);
+                    } catch (err) {
+                        console.log('Aviso sobre bucket S3:', err.message);
+                    }
+                });
+        }
+
         app.listen(process.env.PORT || 3000, () => {
             console.log(`Servidor corriendo en http://localhost:${process.env.PORT || 3000}`);
         });
