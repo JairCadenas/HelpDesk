@@ -169,6 +169,10 @@ Este proyecto es una versión funcional para fines académicos o de demostració
 - Usar variables de entorno y secretos administrados.
 - Añadir protección contra ataques CSRF y otros riesgos comunes.
 
-## Autor
+## Autores
 
-[Jair Cadenas](https://github.com/JairCadenas)
+- [Jair Cadenas](https://github.com/JairCadenas)
+- [Laura Toledo](https://github.com/altoledo27)
+- [Carlos Rafael](https://github.com/ElmarcanitoGTR)
+- [Luisa Michille Ortiz Conejo](https://github.com/Mich0-14)
+- [Mochi-Pichy](https://github.com/Mochi-Pichy)
