@@ -25,7 +25,7 @@ if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads', { recursive: true });
 }
 
-// Servir evidencias (S3 o almacenamiento local)
+// Servir evidencias (S3 o almacenamiento local como respaldo)
 app.get('/uploads/:filename', async (req, res) => {
     const filename = path.basename(req.params.filename);
     if (s3Client && process.env.S3_BUCKET_NAME) {
@@ -38,17 +38,17 @@ app.get('/uploads/:filename', async (req, res) => {
             if (s3Response.ContentType) {
                 res.setHeader('Content-Type', s3Response.ContentType);
             }
-            s3Response.Body.pipe(res);
+            return s3Response.Body.pipe(res);
         } catch (err) {
-            console.error('Error al recuperar evidencia de S3:', err.message);
-            res.status(404).send('Archivo no encontrado');
+            console.warn('Evidencia no disponible en S3, intentando en disco local:', err.message);
         }
-    } else {
-        const localPath = path.join(__dirname, 'uploads', filename);
-        res.sendFile(localPath, (err) => {
-            if (err) res.status(404).send('Archivo no encontrado');
-        });
     }
+    
+    const localPath = path.join(__dirname, 'uploads', filename);
+    if (fs.existsSync(localPath)) {
+        return res.sendFile(localPath);
+    }
+    res.status(404).send('Archivo no encontrado');
 });
 
 const pool = new Pool({
@@ -169,19 +169,29 @@ app.post('/api/incidencias', upload.single('evidencia'), async (req, res) => {
         );
 
         if (req.file) {
-            let rutaArchivo = '';
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E5);
+            const fileName = uniqueSuffix + path.extname(req.file.originalname);
+            let rutaArchivo = `/uploads/${fileName}`;
+
+            let s3Exitoso = false;
             if (s3Client && process.env.S3_BUCKET_NAME) {
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E5);
-                const s3Key = uniqueSuffix + path.extname(req.file.originalname);
-                await s3Client.send(new PutObjectCommand({
-                    Bucket: process.env.S3_BUCKET_NAME,
-                    Key: s3Key,
-                    Body: req.file.buffer,
-                    ContentType: req.file.mimetype
-                }));
-                rutaArchivo = `/uploads/${s3Key}`;
-            } else {
-                rutaArchivo = `/uploads/${req.file.filename}`;
+                try {
+                    await s3Client.send(new PutObjectCommand({
+                        Bucket: process.env.S3_BUCKET_NAME,
+                        Key: fileName,
+                        Body: req.file.buffer,
+                        ContentType: req.file.mimetype
+                    }));
+                    s3Exitoso = true;
+                } catch (s3Err) {
+                    console.warn(`Aviso: Error al subir evidencia a S3 (${s3Err.message}). Guardando en disco local como respaldo.`);
+                }
+            }
+
+            // Si S3 no está configurado o falló (ej. bucket no creado en Learner Lab), guardar en disco local
+            if (!s3Exitoso) {
+                const localFilePath = path.join(__dirname, 'uploads', fileName);
+                fs.writeFileSync(localFilePath, req.file.buffer);
             }
 
             await client.query(
@@ -251,18 +261,13 @@ pool.query('SELECT NOW()')
             console.warn('Aviso al verificar tablas:', dbInitErr.message);
         }
 
-        // Verificar o crear bucket en S3 si está configurado
+        // Verificar disponibilidad de bucket S3 si está configurado
         if (s3Client && process.env.S3_BUCKET_NAME) {
-            const { CreateBucketCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
+            const { HeadBucketCommand } = require('@aws-sdk/client-s3');
             s3Client.send(new HeadBucketCommand({ Bucket: process.env.S3_BUCKET_NAME }))
                 .then(() => console.log(`Bucket S3 '${process.env.S3_BUCKET_NAME}' verificado y disponible.`))
-                .catch(async () => {
-                    try {
-                        await s3Client.send(new CreateBucketCommand({ Bucket: process.env.S3_BUCKET_NAME }));
-                        console.log(`Bucket S3 '${process.env.S3_BUCKET_NAME}' creado exitosamente.`);
-                    } catch (err) {
-                        console.log('Aviso sobre bucket S3:', err.message);
-                    }
+                .catch((err) => {
+                    console.warn(`[AVISO S3] El bucket '${process.env.S3_BUCKET_NAME}' no está disponible (${err.message}). En AWS Learner Lab debes crearlo manualmente desde la consola S3 (us-east-1). Mientras tanto, el sistema utilizará almacenamiento local en disco como respaldo automático.`);
                 });
         }
 
