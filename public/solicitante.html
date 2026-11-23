@@ -6,7 +6,7 @@
     <title>Panel del Solicitante | Help Desk FIF</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -20,16 +20,21 @@
         </a>
         <div class="nav-user">
             <span id="user-info"></span>
-            <button onclick="cerrarSesion()" class="btn btn-secondary btn-sm">Cerrar Sesión</button>
+            <button onclick="cerrarSesion()" class="btn btn-secondary btn-sm">Cerrar sesión</button>
         </div>
     </nav>
 
     <main class="container">
+        <header class="page-head">
+            <h1>Mis reportes</h1>
+            <p>Levanta una incidencia y sigue su avance en un solo lugar.</p>
+        </header>
+
         <!-- Formulario de nuevo reporte -->
         <section class="card solicitante-form">
             <div class="section-header">
                 <div>
-                    <h2>Levantar Nuevo Reporte de Falla</h2>
+                    <h2>Levantar nuevo reporte de falla</h2>
                     <p>Describe el problema y recibirás un folio de seguimiento.</p>
                 </div>
             </div>
@@ -52,7 +57,7 @@
                         </select>
                     </div>
                     <div>
-                        <label for="prioridad">Nivel de Prioridad</label>
+                        <label for="prioridad">Nivel de prioridad</label>
                         <select id="prioridad" required>
                             <option value="Baja">Baja</option>
                             <option value="Media" selected>Media</option>
@@ -71,14 +76,14 @@
                     <input type="file" id="evidencia" accept="image/*,.pdf,.doc,.docx">
                 </div>
 
-                <button type="submit" class="btn btn-lg">Generar Folio de Incidencia</button>
+                <button type="submit" class="btn btn-lg">Generar folio de incidencia</button>
             </form>
         </section>
 
         <!-- Listado de folios propios -->
         <section class="card">
             <div class="section-header">
-                <h2>Mis Folios Reportados</h2>
+                <h2>Mis folios reportados</h2>
                 <select id="filtro-estado" onchange="cargarMisFolios()" style="width: auto;">
                     <option value="">Todos los estados</option>
                     <option value="Abierto">Abierto</option>

@@ -6,7 +6,7 @@
     <title>Iniciar Sesión | Help Desk FIF</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="page-auth">
@@ -18,35 +18,48 @@
             </span>
             Help Desk FIF
         </a>
-        <a href="index.html" class="btn btn-secondary btn-sm">&larr; Volver al Inicio</a>
+        <a href="index.html" class="btn btn-secondary btn-sm">&larr; Inicio</a>
     </nav>
 
     <div class="login-wrapper">
         <div class="card">
-            <h2>Acceso al Portal</h2>
+            <h2>Acceso al portal</h2>
             <p class="login-sub">Ingresa tus credenciales según tu perfil asignado.</p>
 
             <div class="demo-box">
-                <strong>Cuentas de prueba:</strong><br>
-                • Solicitante A: <code>solicitante1</code> / <code>1234</code><br>
-                • Solicitante B: <code>solicitante2</code> / <code>1234</code><br>
-                • Soporte Técnico: <code>soporte1</code> / <code>1234</code>
+                <strong>Cuentas de prueba</strong>
+                <div class="chips">
+                    <button type="button" class="chip" data-u="solicitante1" data-p="1234">solicitante1</button>
+                    <button type="button" class="chip chip-purple" data-u="solicitante2" data-p="1234">solicitante2</button>
+                    <button type="button" class="chip chip-green" data-u="soporte1" data-p="1234">soporte1</button>
+                </div>
+                <p class="demo-hint">Toca una cuenta para rellenar los campos (contraseña: <code>1234</code>).</p>
             </div>
 
             <form id="login-form">
                 <div class="field">
                     <label for="usuario">Usuario</label>
-                    <input type="text" id="usuario" placeholder="Ej. solicitante1" required>
+                    <input type="text" id="usuario" placeholder="Ej. solicitante1" autocomplete="username" required>
                 </div>
                 <div class="field">
                     <label for="password">Contraseña</label>
-                    <input type="password" id="password" placeholder="••••••••" required>
+                    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
                 </div>
-                <button type="submit" class="btn btn-lg btn-block">Entrar al Sistema</button>
+                <button type="submit" class="btn btn-lg btn-block">Entrar al sistema</button>
             </form>
         </div>
     </div>
 
     <script src="auth.js"></script>
+    <script>
+        document.querySelectorAll('.chip').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                document.getElementById('usuario').value = chip.dataset.u;
+                var pass = document.getElementById('password');
+                pass.value = chip.dataset.p;
+                pass.focus();
+            });
+        });
+    </script>
 </body>
 </html>

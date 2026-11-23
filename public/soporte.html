@@ -6,7 +6,7 @@
     <title>Panel de Soporte | Help Desk FIF</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -20,27 +20,41 @@
         </a>
         <div class="nav-user">
             <span id="user-info"></span>
-            <button onclick="cerrarSesion()" class="btn btn-secondary btn-sm">Cerrar Sesión</button>
+            <button onclick="cerrarSesion()" class="btn btn-secondary btn-sm">Cerrar sesión</button>
         </div>
     </nav>
 
     <main class="container">
+        <header class="page-head">
+            <h1>Centro de atención</h1>
+            <p>Revisa, asigna y resuelve las incidencias reportadas.</p>
+        </header>
+
         <!-- Resumen rápido -->
         <div class="stats-grid">
-            <div class="stat-box stat-abierto"><span id="count-abierto">0</span>Abiertos</div>
-            <div class="stat-box stat-atencion"><span id="count-atencion">0</span>En atención</div>
-            <div class="stat-box stat-resuelto"><span id="count-resuelto">0</span>Resueltos</div>
+            <div class="stat-box stat-abierto">
+                <svg class="stat-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                <span id="count-abierto">0</span>Abiertos
+            </div>
+            <div class="stat-box stat-atencion">
+                <svg class="stat-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span id="count-atencion">0</span>En atención
+            </div>
+            <div class="stat-box stat-resuelto">
+                <svg class="stat-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                <span id="count-resuelto">0</span>Resueltos
+            </div>
         </div>
 
         <!-- Filtros y bandeja general -->
         <section class="card">
             <div class="section-header">
-                <h2>Bandeja General de Incidencias</h2>
+                <h2>Bandeja general de incidencias</h2>
             </div>
             <div class="filters">
                 <div class="form-grid">
                     <div>
-                        <label for="filtro-estado">Filtrar por Estado</label>
+                        <label for="filtro-estado">Filtrar por estado</label>
                         <select id="filtro-estado" onchange="cargarBandeja()">
                             <option value="">Todos</option>
                             <option value="Abierto">Abierto</option>
@@ -49,7 +63,7 @@
                         </select>
                     </div>
                     <div>
-                        <label for="filtro-categoria">Filtrar por Categoría</label>
+                        <label for="filtro-categoria">Filtrar por categoría</label>
                         <select id="filtro-categoria" onchange="cargarBandeja()">
                             <option value="">Todas</option>
                             <option value="Proyectores">Proyectores</option>
@@ -62,7 +76,7 @@
                         </select>
                     </div>
                     <div>
-                        <label for="filtro-prioridad">Filtrar por Prioridad</label>
+                        <label for="filtro-prioridad">Filtrar por prioridad</label>
                         <select id="filtro-prioridad" onchange="cargarBandeja()">
                             <option value="">Todas</option>
                             <option value="Baja">Baja</option>
