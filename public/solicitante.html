@@ -3,13 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel del Solicitante | Help Desk Escolar</title>
+    <title>Panel del Solicitante | Help Desk FIF</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
     <nav class="navbar">
-        <a href="index.html" class="brand">🛠️ Mesa de Ayuda Escolar</a>
+        <a href="index.html" class="brand">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M21 15a2 2 0 0 1-2 2h-1v-5h1a2 2 0 0 1 2 2z"/><path d="M3 15a2 2 0 0 0 2 2h1v-5H5a2 2 0 0 0-2 2z"/><path d="M18 17v1a3 3 0 0 1-3 3h-2"/></svg>
+            </span>
+            Help Desk FIF
+        </a>
         <div class="nav-user">
             <span id="user-info"></span>
             <button onclick="cerrarSesion()" class="btn btn-secondary btn-sm">Cerrar Sesión</button>
@@ -18,8 +26,13 @@
 
     <main class="container">
         <!-- Formulario de nuevo reporte -->
-        <section class="card">
-            <h2 style="margin-bottom: 14px;">Levantar Nuevo Reporte de Falla</h2>
+        <section class="card solicitante-form">
+            <div class="section-header">
+                <div>
+                    <h2>Levantar Nuevo Reporte de Falla</h2>
+                    <p>Describe el problema y recibirás un folio de seguimiento.</p>
+                </div>
+            </div>
             <form id="ticket-form">
                 <div class="form-grid">
                     <div>
@@ -35,6 +48,7 @@
                             <option value="Mobiliario">Mobiliario (Mesas/Sillas)</option>
                             <option value="Eléctrico">Instalación Eléctrica</option>
                             <option value="Red e Internet">Red e Internet</option>
+                            <option value="Equipo de Computo">Equipo de Cómputo</option>
                         </select>
                     </div>
                     <div>
@@ -47,23 +61,23 @@
                     </div>
                 </div>
 
-                <div style="margin-bottom: 12px;">
+                <div class="field">
                     <label for="descripcion">Descripción detallada y ubicación</label>
                     <textarea id="descripcion" rows="3" placeholder="Indica el edificio, número de aula y qué ocurre exactamente..." required></textarea>
                 </div>
 
-                <div style="margin-bottom: 16px;">
+                <div class="field">
                     <label for="evidencia">Adjuntar evidencia (imagen o documento opcional)</label>
                     <input type="file" id="evidencia" accept="image/*,.pdf,.doc,.docx">
                 </div>
 
-                <button type="submit" class="btn">Generar Folio de Incidencia</button>
+                <button type="submit" class="btn btn-lg">Generar Folio de Incidencia</button>
             </form>
         </section>
 
         <!-- Listado de folios propios -->
         <section class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <div class="section-header">
                 <h2>Mis Folios Reportados</h2>
                 <select id="filtro-estado" onchange="cargarMisFolios()" style="width: auto;">
                     <option value="">Todos los estados</option>
